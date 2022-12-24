@@ -23,6 +23,8 @@ def check_keys(obj):
 
 def check_timeout(value):
     value = cv.positive_time_period_microseconds(value)
+    if value.total_seconds > 60:
+        raise cv.Invalid("Maximum timeout can not be greater then 60 seconds")
     return value
 
 

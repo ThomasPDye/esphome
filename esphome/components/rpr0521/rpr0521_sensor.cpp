@@ -1,3 +1,5 @@
+#include <cstdarg>
+
 #include "rpr0521_sensor.h"
 #include "esphome/core/log.h"
 #include "rpr0521_defs.h"

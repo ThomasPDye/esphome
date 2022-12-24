@@ -1,7 +1,7 @@
 ---
 esphome:
   name: test
-  platform: esp32s3
+  platform: esp32
   board: esp32-s3-devkitc-1
 
 sensor:

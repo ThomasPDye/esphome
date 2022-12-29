@@ -16,17 +16,17 @@ uint8_t RPR0521Sensor::readId() {
   uint8_t id;
 
   if (!read_bytes(RPR0521_MANUFACT, &id, 1)) {
-    ESP_LOG_D(TAG, "%s", "Manufacturer read failed.\n\r");
+    ESP_LOGD(TAG, "%s", "Manufacturer read failed.\n\r");
     return 255;
   } else {
     uint8_t part_id;
 
-    ESP_LOG_D(TAG, "Manufacturer: %u\n\r", id);
+    ESP_LOGD(TAG, "Manufacturer: %u\n\r", id);
     if (!read_bytes(RPR0521_SYSTEM_CONTROL, &part_id, 1)) {
       LOG_D(TAG, "%s", "Part ID read failed.\n\r");
       return 255;
     } else {
-      ESP_LOG_D(TAG, "Part ID: %u\n\r", (part_id & 0x3f));
+      ESP_LOGD(TAG, "Part ID: %u\n\r", (part_id & 0x3f));
       return part_id;
     }
   }
@@ -65,7 +65,7 @@ bool RPR0521Sensor::read_data(uint16_t *data16) {
     data16[2] = (data[4]) | (data[5] << 8);  // als_data1
     return true;
   } else {
-    ESP_LOG_D(TAG, "Read error.\n\r");
+    ESP_LOGD(TAG, "Read error.\n\r");
     return false;
   }
 }

@@ -22,11 +22,11 @@ uint8_t RPR0521Sensor::readId() {
     uint8_t part_id;
 
     LOG_D(TAG, "Manufacturer: %u\n\r", id);
-    if (!read_bytes(RPR0521_SYSTEM_CONTROL, &id, 1)) {
+    if (!read_bytes(RPR0521_SYSTEM_CONTROL, &part_id, 1)) {
       LOG_D(TAG, "%s", "Part ID read failed.\n\r");
       return 255;
     } else {
-      LOG_D(TAG, "Part ID: %u\n\r", (partid & 0x3f));
+      LOG_D(TAG, "Part ID: %u\n\r", (part_id & 0x3f));
       return part_id;
     }
   }

@@ -7,12 +7,13 @@ namespace rpr0521 {
 
 static const char *const TAG = "rpr0521";
 
-std::list<RPR0521Sensor *> RPR0521Sensor::rpr0521_sensors;
-bool RPR0521Sensor::interrupt_pin_setup_complete = false;
+std::list<RPR0521Sensor *>
+    RPR0521Sensor::rpr0521_sensors;                        // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+bool RPR0521Sensor::interrupt_pin_setup_complete = false;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 RPR0521Sensor::RPR0521Sensor() { RPR0521Sensor::rpr0521_sensors.push_back(this); };
 
-uint8_t RPR0521Sensor::readId() {
+uint8_t RPR0521Sensor::read_id_() {
   uint8_t id;
 
   if (!read_bytes(RPR0521_MANUFACT, &id, 1)) {
@@ -32,22 +33,21 @@ uint8_t RPR0521Sensor::readId() {
   }
 }
 
-void RPR0521Sensor::wait_until_found() {
+void RPR0521Sensor::wait_until_found_() {
   uint8_t id;
 
-  id = readId();
+  id = read_id_();
   while (id == 255) {
     delayMicroseconds(100);
-    id = readId();
+    id = read_id_();
   }
-  return;
 }
 
-void RPR0521Sensor::soft_reset() { reg(RPR0521_SYSTEM_CONTROL) = RPR0521_SYSTEM_CONTROL_SW_RESET_START; }
+void RPR0521Sensor::soft_reset_() { reg(RPR0521_SYSTEM_CONTROL) = RPR0521_SYSTEM_CONTROL_SW_RESET_START; }
 
-void RPR0521Sensor::clear_interrupt() { reg(RPR0521_SYSTEM_CONTROL) = RPR0521_SYSTEM_CONTROL_INT_PIN_HI_Z; }
+void RPR0521Sensor::clear_interrupt_() { reg(RPR0521_SYSTEM_CONTROL) = RPR0521_SYSTEM_CONTROL_INT_PIN_HI_Z; }
 
-void RPR0521Sensor::initial_setup() {
+void RPR0521Sensor::initial_setup_() {
   reg(RPR0521_ALS_PS_CONTROL) = (RPR0521_ALS_PS_CONTROL_ALS_DATA0_GAIN_X1 | RPR0521_ALS_PS_CONTROL_ALS_DATA1_GAIN_X1 |
                                  RPR0521_ALS_PS_CONTROL_LED_CURRENT_25MA);
   reg(RPR0521_PS_CONTROL) = (RPR0521_PS_CONTROL_PS_GAIN_X1 | RPR0521_PS_CONTROL_PERSISTENCE_DRDY);
@@ -56,8 +56,8 @@ void RPR0521Sensor::initial_setup() {
        RPR0521_MODE_CONTROL_PS_OPERATING_MODE_NORMAL | RPR0521_MODE_CONTROL_MEASUREMENT_TIME_100MS_100MS);
 }
 
-bool RPR0521Sensor::read_data(uint16_t *data16) {
-#define RPR0521_DATA_LEN 6
+bool RPR0521Sensor::read_data_(uint16_t *data16) {
+  static const uint8_t RPR0521_DATA_LEN = 6;
   uint8_t data[RPR0521_DATA_LEN];
   if (read_bytes(RPR0521_PS_DATA_LSBS, &data[0], RPR0521_DATA_LEN)) {
     data16[0] = (data[0]) | (data[1] << 8);  // ps_data
@@ -72,7 +72,7 @@ bool RPR0521Sensor::read_data(uint16_t *data16) {
 
 void RPR0521Sensor::setup() {
   this->set_i2c_address(0x38);
-  initial_setup();
+  initial_setup_();
 }
 
 void RPR0521Sensor::loop() {}

@@ -30,18 +30,18 @@ class RPR0521Sensor : public sensor::Sensor, public PollingComponent, public i2c
   uint16_t timeout_start_us_;
   uint16_t timeout_us_{};
 
-  uint8_t readId();
-  void wait_until_found();
+  uint8_t read_id_();
+  void wait_until_found_();
 
-  void soft_reset();
-  void clear_interrupt();
+  void soft_reset_();
+  void clear_interrupt_();
 
-  void initial_setup();
+  void initial_setup_();
 
-  bool read_data(uint16_t *data16);
+  bool read_data_(uint16_t *data16);
 
-  static std::list<RPR0521Sensor *> rpr0521_sensors;
-  static bool interrupt_pin_setup_complete;
+  static std::list<RPR0521Sensor *> rpr0521_sensors;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+  static bool interrupt_pin_setup_complete;           // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 };
 
 }  // namespace rpr0521

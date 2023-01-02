@@ -4,8 +4,15 @@ esphome:
   platform: esp32
   board: esp32-s3-devkitc-1
 
+i2c:
+  - id: bus_1
+    sda: GPIO10
+    scl: GPIO9
+
 sensor:
   - platform: rpr0521
     id: s_1
     name: test s1
+    i2c_id: bus_1
+    interrupt_pin: GPIO11
     device_class: distance

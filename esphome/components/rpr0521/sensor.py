@@ -30,8 +30,8 @@ CONFIG_SCHEMA = cv.All(
     sensor.sensor_schema(RPR0521Sensor)
     .extend(
         {
-            cv.Required("proximity"),
-            cv.Required("ambient"),
+            cv.Required("proximity"): sensor.sensor_schema(),
+            cv.Required("ambient"): sensor.sensor_schema(),
         }
     )
     .extend(

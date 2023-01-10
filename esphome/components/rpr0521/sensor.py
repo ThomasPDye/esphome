@@ -53,6 +53,10 @@ async def to_code(config):
     var = await sensor.new_sensor(config)
     await cg.register_component(var, config)
     cg.add(var.set_timeout_us(config[CONF_TIMEOUT]))
+    px = cg.Pvariable("px", var.proximity_sensor)
+    amb = cg.Pvariable("amb", var.ambient_light_sensor)
+    await sensor.register_sensor(px, config["proximity"])
+    await sensor.register_sensor(amb, config["ambient"])
 
     if CONF_INTERRUPT_PIN in config:
         interrupt = await cg.gpio_pin_expression(config[CONF_INTERRUPT_PIN])

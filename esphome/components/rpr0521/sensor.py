@@ -37,7 +37,7 @@ CONFIG_SCHEMA = cv.All(
     )
     .extend(
         {
-            cv.Optional(CONF_TIMEOUT, default="1000ms"): check_timeout,
+            cv.Optional(CONF_TIMEOUT, default="100ms"): check_timeout,
             cv.Optional(CONF_INTERRUPT_PIN): pins.gpio_input_pin_schema,
         }
     )

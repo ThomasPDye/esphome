@@ -2,8 +2,6 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import i2c, sensor
 from esphome.const import (
-    STATE_CLASS_MEASUREMENT,
-    UNIT_METER,
     CONF_TIMEOUT,
     CONF_INTERRUPT_PIN,
 )
@@ -17,9 +15,7 @@ RPR0521Sensor = rpr0521_ns.class_(
 )
 
 RPR0521Sensor_proximity = RPR0521Sensor.class_("proximity_sensor", sensor.Sensor)
-RPR0521Sensor_ambient_light = RPR0521Sensor.class_(
-    "ambient_light_sensor", sensor.Sensor
-)
+RPR0521Sensor_ambient = RPR0521Sensor.class_("ambient_light_sensor", sensor.Sensor)
 
 
 def check_keys(obj):
@@ -36,20 +32,10 @@ def check_timeout(value):
 CONFIG_SCHEMA = cv.All(
     sensor.sensor_schema(RPR0521Sensor)
     .extend(
-        sensor.sensor_schema(
-            RPR0521Sensor_proximity,
-            unit_of_measurement=UNIT_METER,
-            accuracy_decimals=3,
-            state_class=STATE_CLASS_MEASUREMENT,
-        )
-    )
-    .extend(
-        sensor.sensor_schema(
-            RPR0521Sensor_ambient_light,
-            unit_of_measurement=UNIT_METER,
-            accuracy_decimals=3,
-            state_class=STATE_CLASS_MEASUREMENT,
-        )
+        {
+            cv.Required("proximity"): RPR0521Sensor_proximity,
+            cv.Required("ambient"): RPR0521Sensor_ambient,
+        }
     )
     .extend(
         {

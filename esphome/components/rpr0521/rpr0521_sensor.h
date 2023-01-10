@@ -10,7 +10,7 @@
 namespace esphome {
 namespace rpr0521 {
 
-class RPR0521Sensor : public PollingComponent, public i2c::I2CDevice {
+class RPR0521Sensor : public sensor::Sensor, public PollingComponent, public i2c::I2CDevice {
  public:
   sensor::Sensor *proximity_sensor = new sensor::Sensor();
   sensor::Sensor *ambient_light_sensor = new sensor::Sensor();

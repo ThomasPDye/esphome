@@ -14,9 +14,6 @@ RPR0521Sensor = rpr0521_ns.class_(
     "RPR0521Sensor", sensor.Sensor, cg.PollingComponent, i2c.I2CDevice
 )
 
-RPR0521Sensor_proximity = RPR0521Sensor.class_("proximity_sensor", sensor.Sensor)
-RPR0521Sensor_ambient = RPR0521Sensor.class_("ambient_light_sensor", sensor.Sensor)
-
 
 def check_keys(obj):
     return obj
@@ -33,8 +30,8 @@ CONFIG_SCHEMA = cv.All(
     sensor.sensor_schema(RPR0521Sensor)
     .extend(
         {
-            cv.Required("proximity"): RPR0521Sensor_proximity,
-            cv.Required("ambient"): RPR0521Sensor_ambient,
+            cv.Required("proximity"),
+            cv.Required("ambient"),
         }
     )
     .extend(

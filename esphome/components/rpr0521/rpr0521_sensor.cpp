@@ -11,7 +11,7 @@ std::list<RPR0521Sensor *>
     RPR0521Sensor::rpr0521_sensors;                        // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 bool RPR0521Sensor::interrupt_pin_setup_complete = false;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
-RPR0521Sensor::RPR0521Sensor() { RPR0521Sensor::rpr0521_sensors.push_back(this); };
+RPR0521Sensor::RPR0521Sensor() : PollingComponent(100) { RPR0521Sensor::rpr0521_sensors.push_back(this); };
 
 uint8_t RPR0521Sensor::read_id_() {
   uint8_t id;
@@ -24,7 +24,7 @@ uint8_t RPR0521Sensor::read_id_() {
 
     ESP_LOGD(TAG, "Manufacturer: %u\n\r", id);
     if (!read_bytes(RPR0521_SYSTEM_CONTROL, &part_id, 1)) {
-      LOG_D(TAG, "%s", "Part ID read failed.\n\r");
+      ESP_LOGD(TAG, "%s", "Part ID read failed.\n\r");
       return 255;
     } else {
       ESP_LOGD(TAG, "Part ID: %u\n\r", (part_id & 0x3f));
@@ -49,20 +49,22 @@ void RPR0521Sensor::clear_interrupt_() { reg(RPR0521_SYSTEM_CONTROL) = RPR0521_S
 
 void RPR0521Sensor::initial_setup_() {
   reg(RPR0521_ALS_PS_CONTROL) = (RPR0521_ALS_PS_CONTROL_ALS_DATA0_GAIN_X1 | RPR0521_ALS_PS_CONTROL_ALS_DATA1_GAIN_X1 |
-                                 RPR0521_ALS_PS_CONTROL_LED_CURRENT_25MA);
+                                 RPR0521_ALS_PS_CONTROL_LED_CURRENT_100MA);
   reg(RPR0521_PS_CONTROL) = (RPR0521_PS_CONTROL_PS_GAIN_X1 | RPR0521_PS_CONTROL_PERSISTENCE_DRDY);
   reg(RPR0521_MODE_CONTROL) =
       (RPR0521_MODE_CONTROL_ALS_EN_TRUE | RPR0521_MODE_CONTROL_PS_EN_TRUE | RPR0521_MODE_CONTROL_PS_PULSE_200US |
        RPR0521_MODE_CONTROL_PS_OPERATING_MODE_NORMAL | RPR0521_MODE_CONTROL_MEASUREMENT_TIME_100MS_100MS);
+  reg(RPR0521_INTERRUPT) =
+      (RPR0521_INTERRUPT_INT_ASSERT_STABLE | RPR0521_INTERRUPT_INT_LATCH_DISABLED | RPR0521_INTERRUPT_INT_TRIG_BY_BOTH);
 }
 
-bool RPR0521Sensor::read_data_(uint16_t *data16) {
+bool RPR0521Sensor::read_data_(uint16_t *proximity, uint16_t *ambient) {
   static const uint8_t RPR0521_DATA_LEN = 6;
   uint8_t data[RPR0521_DATA_LEN];
   if (read_bytes(RPR0521_PS_DATA_LSBS, &data[0], RPR0521_DATA_LEN)) {
-    data16[0] = (data[0]) | (data[1] << 8);  // ps_data
-    data16[1] = (data[2]) | (data[3] << 8);  // als_data0
-    data16[2] = (data[4]) | (data[5] << 8);  // als_data1
+    proximity[0] = (data[0]) | (data[1] << 8);  // ps_data
+    ambient[1] = (data[2]) | (data[3] << 8);    // als_data0
+    ambient[2] = (data[4]) | (data[5] << 8);    // als_data1
     return true;
   } else {
     ESP_LOGD(TAG, "Read error.\n\r");
@@ -70,14 +72,77 @@ bool RPR0521Sensor::read_data_(uint16_t *data16) {
   }
 }
 
+float RPR0521Sensor::lux_(uint16_t *ambient) {
+  float lx;
+  const uint16_t als_measure_time = 100, als_data0_gain = 1, als_data1_gain = 1;
+  float d0, d1, d1_d0;
+  if (als_measure_time == 50) {
+    if ((ambient[0] & 0x8000) == 0x8000) {
+      ambient[0] = 0x7FFF;
+    }
+    if ((ambient[1] & 0x8000) == 0x8000) {
+      ambient[1] = 0x7FFF;
+    }
+  }
+  d0 = (float) ambient[0] * (100 / als_measure_time) / als_data0_gain;
+  d1 = (float) ambient[1] * (100 / als_measure_time) / als_data1_gain;
+
+  if (d0 == 0.0) {
+    lx = 0.0;
+    return lx;
+  }
+
+  d1_d0 = d1 / d0;
+
+  if (d1_d0 < 0.595) {
+    lx = (1.682 * d0 - 1.877 * d1);
+  } else if (d1_d0 < 1.015) {
+    lx = (0.644 * d0 - 0.132 * d1);
+  } else if (d1_d0 < 1.352) {
+    lx = (0.756 * d0 - 0.243 * d1);
+  } else if (d1_d0 < 3.053) {
+    lx = (0.766 * d0 - 0.25 * d1);
+  } else {
+    lx = 0.0;
+  }
+
+  return lx;
+}
+
+float RPR0521Sensor::prox_(uint16_t *data) { return (float) data[0]; }
+
+void RPR0521Sensor::read_and_publish_() {
+  uint16_t proximity_data[1], ambient_data[2];
+  float proximity, ambient_lux;
+  read_data_(proximity_data, ambient_data);
+  proximity = prox_(proximity_data);
+  ambient_lux = lux_(ambient_data);
+  proximity_sensor->publish_state(proximity);
+  ambient_light_sensor->publish_state(ambient_lux);
+}
+
 void RPR0521Sensor::setup() {
+  if (interrupt_pin_)
+    interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
   this->set_i2c_address(0x38);
+  wait_until_found_();
   initial_setup_();
 }
 
 void RPR0521Sensor::loop() {}
 
-void RPR0521Sensor::update() {}
+void RPR0521Sensor::update() {
+  if (interrupt_pin_ != nullptr) {
+    for (int n = 0; (interrupt_pin_->digital_read() == true) && (n < 10); n++) {
+      delayMicroseconds(100);
+    }
+    if (interrupt_pin_->digital_read() == false) {
+      read_and_publish_();
+    }
+  } else {
+    read_and_publish_();
+  }
+}
 
 }  // namespace rpr0521
 }  // namespace esphome

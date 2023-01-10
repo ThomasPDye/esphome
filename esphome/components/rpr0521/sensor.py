@@ -16,6 +16,11 @@ RPR0521Sensor = rpr0521_ns.class_(
     "RPR0521Sensor", sensor.Sensor, cg.PollingComponent, i2c.I2CDevice
 )
 
+RPR0521Sensor_proximity = RPR0521Sensor.class_("proximity_sensor", sensor.Sensor)
+RPR0521Sensor_ambient_light = RPR0521Sensor.class_(
+    "ambient_light_sensor", sensor.Sensor
+)
+
 
 def check_keys(obj):
     return obj
@@ -29,19 +34,30 @@ def check_timeout(value):
 
 
 CONFIG_SCHEMA = cv.All(
-    sensor.sensor_schema(
-        RPR0521Sensor,
-        unit_of_measurement=UNIT_METER,
-        accuracy_decimals=3,
-        state_class=STATE_CLASS_MEASUREMENT,
+    sensor.sensor_schema(RPR0521Sensor)
+    .extend(
+        sensor.sensor_schema(
+            RPR0521Sensor_proximity,
+            unit_of_measurement=UNIT_METER,
+            accuracy_decimals=3,
+            state_class=STATE_CLASS_MEASUREMENT,
+        )
+    )
+    .extend(
+        sensor.sensor_schema(
+            RPR0521Sensor_ambient_light,
+            unit_of_measurement=UNIT_METER,
+            accuracy_decimals=3,
+            state_class=STATE_CLASS_MEASUREMENT,
+        )
     )
     .extend(
         {
-            cv.Optional(CONF_TIMEOUT, default="10ms"): check_timeout,
+            cv.Optional(CONF_TIMEOUT, default="1000ms"): check_timeout,
             cv.Optional(CONF_INTERRUPT_PIN): pins.gpio_input_pin_schema,
         }
     )
-    .extend(cv.polling_component_schema("60s"))
+    .extend(cv.polling_component_schema("100ms"))
     .extend(i2c.i2c_device_schema(0x38)),
     check_keys,
 )

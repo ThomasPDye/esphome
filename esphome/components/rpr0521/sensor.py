@@ -2,6 +2,7 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import i2c, sensor
 from esphome.const import (
+    CONF_ID,
     CONF_TIMEOUT,
     CONF_INTERRUPT_PIN,
 )
@@ -50,10 +51,12 @@ async def to_code(config):
     var = await sensor.new_sensor(config)
     await cg.register_component(var, config)
     cg.add(var.set_timeout_us(config[CONF_TIMEOUT]))
-    px = cg.Pvariable("px", var.proximity_sensor)
-    amb = cg.Pvariable("amb", var.ambient_light_sensor)
-    await sensor.register_sensor(px, config["proximity"])
-    await sensor.register_sensor(amb, config["ambient"])
+    confpx = config["proximity"]
+    confamb = config["ambient"]
+    px = cg.Pvariable(confpx[CONF_ID], var.proximity_sensor)
+    amb = cg.Pvariable(confamb[CONF_ID], var.ambient_light_sensor)
+    await sensor.register_sensor(px, confpx)
+    await sensor.register_sensor(amb, confamb)
 
     if CONF_INTERRUPT_PIN in config:
         interrupt = await cg.gpio_pin_expression(config[CONF_INTERRUPT_PIN])

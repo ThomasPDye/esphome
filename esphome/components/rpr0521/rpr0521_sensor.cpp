@@ -133,7 +133,8 @@ void RPR0521Sensor::loop() {}
 
 void RPR0521Sensor::update() {
   if (interrupt_pin_ != nullptr) {
-    for (int n = 0; (interrupt_pin_->digital_read() == true) && (n < 10); n++) {
+    const int lim = timeout_us_ / 100;
+    for (int n = 0; (interrupt_pin_->digital_read() == true) && (n < lim); n++) {
       delayMicroseconds(100);
     }
     if (interrupt_pin_->digital_read() == false) {

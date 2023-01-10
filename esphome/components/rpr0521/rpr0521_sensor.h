@@ -24,6 +24,7 @@ class RPR0521Sensor : public sensor::Sensor, public PollingComponent, public i2c
   void loop() override;
 
   void set_interrupt_pin(GPIOPin *interrupt) { this->interrupt_pin_ = interrupt; }
+  void set_timeout_us(uint16_t us) { this->timeout_us_ = us; }
 
  protected:
   uint8_t read_id_();

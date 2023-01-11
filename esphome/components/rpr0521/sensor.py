@@ -5,10 +5,15 @@ from esphome.const import (
     CONF_ID,
     CONF_TIMEOUT,
     CONF_INTERRUPT_PIN,
+    DEVICE_CLASS_DISTANCE,
+    DEVICE_CLASS_ILLUMINANCE,
 )
 from esphome import pins
 
 DEPENDENCIES = ["i2c"]
+
+CONF_PROXIMITY = "proximity"
+CONF_AMBIENT = "ambient"
 
 rpr0521_ns = cg.esphome_ns.namespace("rpr0521")
 RPR0521Sensor = rpr0521_ns.class_(
@@ -31,8 +36,12 @@ CONFIG_SCHEMA = cv.All(
     sensor.sensor_schema(RPR0521Sensor)
     .extend(
         {
-            cv.Required("proximity"): sensor.sensor_schema(),
-            cv.Required("ambient"): sensor.sensor_schema(),
+            cv.Required(CONF_PROXIMITY): sensor.sensor_schema(
+                device_class=DEVICE_CLASS_DISTANCE, state_class="measurement"
+            ),
+            cv.Required(CONF_AMBIENT): sensor.sensor_schema(
+                device_class=DEVICE_CLASS_ILLUMINANCE, state_class="measurement"
+            ),
         }
     )
     .extend(
@@ -51,8 +60,8 @@ async def to_code(config):
     var = await sensor.new_sensor(config)
     await cg.register_component(var, config)
     cg.add(var.set_timeout_us(config[CONF_TIMEOUT]))
-    confpx = config["proximity"]
-    confamb = config["ambient"]
+    confpx = config[CONF_PROXIMITY]
+    confamb = config[CONF_AMBIENT]
     px = cg.Pvariable(confpx[CONF_ID], var.proximity_sensor)
     amb = cg.Pvariable(confamb[CONF_ID], var.ambient_light_sensor)
     await sensor.register_sensor(px, confpx)

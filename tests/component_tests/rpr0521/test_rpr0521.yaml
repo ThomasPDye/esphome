@@ -15,4 +15,17 @@ sensor:
     name: test s1
     i2c_id: bus_1
     interrupt_pin: GPIO11
-    device_class: distance
+    proximity:
+      id: px1
+      name: "Proximity"
+      filters:
+        - median:
+            window_size: 10
+            send_every: 10
+    ambient:
+      id: amb1
+      name: "Ambient"
+      filters:
+        - median:
+            window_size: 10
+            send_every: 10

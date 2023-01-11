@@ -7,11 +7,7 @@ namespace rpr0521 {
 
 static const char *const TAG = "rpr0521";
 
-std::list<RPR0521Sensor *>
-    RPR0521Sensor::rpr0521_sensors;                        // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
-bool RPR0521Sensor::interrupt_pin_setup_complete = false;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
-
-RPR0521Sensor::RPR0521Sensor() : PollingComponent(100) { RPR0521Sensor::rpr0521_sensors.push_back(this); };
+RPR0521Sensor::RPR0521Sensor() : PollingComponent(100){};
 
 uint8_t RPR0521Sensor::read_id_() {
   uint8_t id;
@@ -60,7 +56,7 @@ void RPR0521Sensor::initial_setup_() {
 
 bool RPR0521Sensor::read_data_(uint16_t *proximity, uint16_t *ambient) {
   static const uint8_t RPR0521_DATA_LEN = 6;
-  uint8_t data[RPR0521_DATA_LEN];
+  uint8_t data[RPR0521_DATA_LEN] = {0};
   if (read_bytes(RPR0521_PS_DATA_LSBS, &data[0], RPR0521_DATA_LEN)) {
     proximity[0] = (data[0]) | (data[1] << 8);  // ps_data
     ambient[1] = (data[2]) | (data[3] << 8);    // als_data0
@@ -72,20 +68,20 @@ bool RPR0521Sensor::read_data_(uint16_t *proximity, uint16_t *ambient) {
   }
 }
 
-float RPR0521Sensor::lux_(uint16_t *ambient) {
+float RPR0521Sensor::lux_(uint16_t *data) {
   float lx;
   const uint16_t als_measure_time = 100, als_data0_gain = 1, als_data1_gain = 1;
   float d0, d1, d1_d0;
   if (als_measure_time == 50) {
-    if ((ambient[0] & 0x8000) == 0x8000) {
-      ambient[0] = 0x7FFF;
+    if ((data[0] & 0x8000) == 0x8000) {
+      data[0] = 0x7FFF;
     }
-    if ((ambient[1] & 0x8000) == 0x8000) {
-      ambient[1] = 0x7FFF;
+    if ((data[1] & 0x8000) == 0x8000) {
+      data[1] = 0x7FFF;
     }
   }
-  d0 = (float) ambient[0] * (100 / als_measure_time) / als_data0_gain;
-  d1 = (float) ambient[1] * (100 / als_measure_time) / als_data1_gain;
+  d0 = ((float) data[0]) * (100.0f / als_measure_time) / als_data0_gain;
+  d1 = ((float) data[1]) * (100.0f / als_measure_time) / als_data1_gain;
 
   if (d0 == 0.0) {
     lx = 0.0;
@@ -122,8 +118,10 @@ void RPR0521Sensor::read_and_publish_() {
 }
 
 void RPR0521Sensor::setup() {
-  if (interrupt_pin_)
+  if (interrupt_pin_) {
     interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
+    interrupt_pin_setup_complete_ = true;
+  }
   this->set_i2c_address(0x38);
   wait_until_found_();
   initial_setup_();
@@ -132,12 +130,12 @@ void RPR0521Sensor::setup() {
 void RPR0521Sensor::loop() {}
 
 void RPR0521Sensor::update() {
-  if (interrupt_pin_ != nullptr) {
+  if (interrupt_pin_setup_complete_) {
     const int lim = timeout_us_ / 100;
-    for (int n = 0; (interrupt_pin_->digital_read() == true) && (n < lim); n++) {
+    for (int n = 0; (interrupt_pin_->digital_read()) && (n < lim); n++) {
       delayMicroseconds(100);
     }
-    if (interrupt_pin_->digital_read() == false) {
+    if (!interrupt_pin_->digital_read()) {
       read_and_publish_();
     }
   } else {

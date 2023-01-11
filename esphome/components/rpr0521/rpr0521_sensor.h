@@ -24,7 +24,7 @@ class RPR0521Sensor : public sensor::Sensor, public PollingComponent, public i2c
   void loop() override;
 
   void set_interrupt_pin(GPIOPin *interrupt) { this->interrupt_pin_ = interrupt; }
-  void set_timeout_us(uint16_t us) { this->timeout_us_ = us; }
+  void set_timeout_us(uint32_t us) { this->timeout_us_ = us; }
 
  protected:
   uint8_t read_id_();
@@ -37,18 +37,16 @@ class RPR0521Sensor : public sensor::Sensor, public PollingComponent, public i2c
 
   bool read_data_(uint16_t *proximity, uint16_t *ambient);
 
-  float prox_(uint16_t *proximity);
-  float lux_(uint16_t *ambient);
+  float prox_(uint16_t *data);
+  float lux_(uint16_t *data);
 
   void read_and_publish_();
 
   GPIOPin *interrupt_pin_{nullptr};
 
-  uint16_t timeout_start_us_;
-  uint16_t timeout_us_{};
+  uint32_t timeout_us_{};
 
-  static std::list<RPR0521Sensor *> rpr0521_sensors;  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
-  static bool interrupt_pin_setup_complete;           // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+  bool interrupt_pin_setup_complete_;
 };
 
 }  // namespace rpr0521

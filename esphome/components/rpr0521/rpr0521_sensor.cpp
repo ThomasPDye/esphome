@@ -111,6 +111,7 @@ void RPR0521Sensor::read_and_publish_() {
   uint16_t proximity_data[1], ambient_data[2];
   float proximity, ambient_lux;
   read_data_(proximity_data, ambient_data);
+  ESP_LOGD(TAG, "Raw Data: %u, %u, %u", proximity_data[0], ambient_data[0], ambient_data[1]);
   proximity = prox_(proximity_data);
   ambient_lux = lux_(ambient_data);
   proximity_sensor->publish_state(proximity);

@@ -45,10 +45,10 @@ void RPR0521Sensor::clear_interrupt_() { reg(RPR0521_SYSTEM_CONTROL) = RPR0521_S
 
 void RPR0521Sensor::initial_setup_() {
   reg(RPR0521_ALS_PS_CONTROL) = (RPR0521_ALS_PS_CONTROL_ALS_DATA0_GAIN_X1 | RPR0521_ALS_PS_CONTROL_ALS_DATA1_GAIN_X1 |
-                                 RPR0521_ALS_PS_CONTROL_LED_CURRENT_100MA);
-  reg(RPR0521_PS_CONTROL) = (RPR0521_PS_CONTROL_PS_GAIN_X1 | RPR0521_PS_CONTROL_PERSISTENCE_DRDY);
+                                 RPR0521_ALS_PS_CONTROL_LED_CURRENT_50MA);
+  reg(RPR0521_PS_CONTROL) = (RPR0521_PS_CONTROL_PS_GAIN_X4 | RPR0521_PS_CONTROL_PERSISTENCE_DRDY);
   reg(RPR0521_MODE_CONTROL) =
-      (RPR0521_MODE_CONTROL_ALS_EN_TRUE | RPR0521_MODE_CONTROL_PS_EN_TRUE | RPR0521_MODE_CONTROL_PS_PULSE_200US |
+      (RPR0521_MODE_CONTROL_ALS_EN_TRUE | RPR0521_MODE_CONTROL_PS_EN_TRUE | RPR0521_MODE_CONTROL_PS_PULSE_330US |
        RPR0521_MODE_CONTROL_PS_OPERATING_MODE_NORMAL | RPR0521_MODE_CONTROL_MEASUREMENT_TIME_100MS_100MS);
   reg(RPR0521_INTERRUPT) =
       (RPR0521_INTERRUPT_INT_ASSERT_STABLE | RPR0521_INTERRUPT_INT_LATCH_DISABLED | RPR0521_INTERRUPT_INT_TRIG_BY_BOTH);
@@ -80,8 +80,8 @@ float RPR0521Sensor::lux_(uint16_t *data) {
       data[1] = 0x7FFF;
     }
   }
-  d0 = ((float) data[0]) * (100.0f / als_measure_time) / als_data0_gain;
-  d1 = ((float) data[1]) * (100.0f / als_measure_time) / als_data1_gain;
+  d0 = ((float) data[0]) * (100U / als_measure_time) / als_data0_gain;
+  d1 = ((float) data[1]) * (100U / als_measure_time) / als_data1_gain;
 
   if (d0 == 0.0) {
     lx = 0.0;
@@ -111,7 +111,7 @@ void RPR0521Sensor::read_and_publish_() {
   uint16_t proximity_data[1], ambient_data[2];
   float proximity, ambient_lux;
   read_data_(proximity_data, ambient_data);
-  ESP_LOGD(TAG, "Raw Data: %u, %u, %u", proximity_data[0], ambient_data[0], ambient_data[1]);
+  ESP_LOGV(TAG, "Raw Data: %u, %u, %u", proximity_data[0], ambient_data[0], ambient_data[1]);
   proximity = prox_(proximity_data);
   ambient_lux = lux_(ambient_data);
   proximity_sensor->publish_state(proximity);

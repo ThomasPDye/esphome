@@ -2,6 +2,7 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import i2c, sensor
 from esphome.const import (
+    CONF_NAME,
     CONF_ID,
     CONF_TIMEOUT,
     CONF_INTERRUPT_PIN,
@@ -32,16 +33,26 @@ def check_timeout(value):
     return value
 
 
+PROXIMITY_SCHEMA = cv.All(
+    sensor.sensor_schema(
+        device_class=DEVICE_CLASS_DISTANCE, state_class="measurement"
+    ).extend({cv.Optional(CONF_NAME, default="Proximity"): check_keys}),
+    check_keys,
+)
+
+AMBIENT_SCHEMA = cv.All(
+    sensor.sensor_schema(
+        device_class=DEVICE_CLASS_ILLUMINANCE, state_class="measurement"
+    ).extend({cv.Optional(CONF_NAME, default="Ambient"): check_keys}),
+    check_keys,
+)
+
 CONFIG_SCHEMA = cv.All(
     sensor.sensor_schema(RPR0521Sensor)
     .extend(
         {
-            cv.Required(CONF_PROXIMITY): sensor.sensor_schema(
-                device_class=DEVICE_CLASS_DISTANCE, state_class="measurement"
-            ),
-            cv.Required(CONF_AMBIENT): sensor.sensor_schema(
-                device_class=DEVICE_CLASS_ILLUMINANCE, state_class="measurement"
-            ),
+            cv.Required(CONF_PROXIMITY): PROXIMITY_SCHEMA,
+            cv.Required(CONF_AMBIENT): AMBIENT_SCHEMA,
         }
     )
     .extend(
@@ -62,6 +73,8 @@ async def to_code(config):
     cg.add(var.set_timeout_us(config[CONF_TIMEOUT]))
     confpx = config[CONF_PROXIMITY]
     confamb = config[CONF_AMBIENT]
+    confpx[CONF_NAME] = config[CONF_NAME] + ": " + confpx[CONF_NAME]
+    confamb[CONF_NAME] = config[CONF_NAME] + ": " + confamb[CONF_NAME]
     px = cg.Pvariable(confpx[CONF_ID], var.proximity_sensor)
     amb = cg.Pvariable(confamb[CONF_ID], var.ambient_light_sensor)
     await sensor.register_sensor(px, confpx)

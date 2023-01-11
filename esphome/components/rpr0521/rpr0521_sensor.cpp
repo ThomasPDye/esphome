@@ -45,7 +45,7 @@ void RPR0521Sensor::clear_interrupt_() { reg(RPR0521_SYSTEM_CONTROL) = RPR0521_S
 
 void RPR0521Sensor::initial_setup_() {
   reg(RPR0521_ALS_PS_CONTROL) = (RPR0521_ALS_PS_CONTROL_ALS_DATA0_GAIN_X1 | RPR0521_ALS_PS_CONTROL_ALS_DATA1_GAIN_X1 |
-                                 RPR0521_ALS_PS_CONTROL_LED_CURRENT_25MA);
+                                 RPR0521_ALS_PS_CONTROL_LED_CURRENT_100MA);
   reg(RPR0521_PS_CONTROL) = (RPR0521_PS_CONTROL_PS_GAIN_X1 | RPR0521_PS_CONTROL_PERSISTENCE_DRDY);
   reg(RPR0521_MODE_CONTROL) =
       (RPR0521_MODE_CONTROL_ALS_EN_TRUE | RPR0521_MODE_CONTROL_PS_EN_TRUE | RPR0521_MODE_CONTROL_PS_PULSE_200US |
@@ -56,8 +56,8 @@ void RPR0521Sensor::initial_setup_() {
 
 bool RPR0521Sensor::read_data_(uint16_t *proximity, uint16_t *ambient) {
   static const uint8_t RPR0521_DATA_LEN = 6;
-  uint8_t data[RPR0521_DATA_LEN] = {0};
-  if (read_bytes(RPR0521_PS_DATA_LSBS, &data[0], RPR0521_DATA_LEN)) {
+  uint8_t data[RPR0521_DATA_LEN];
+  if (read_bytes(RPR0521_PS_DATA_LSBS, data, RPR0521_DATA_LEN)) {
     proximity[0] = (data[0]) | (data[1] << 8);  // ps_data
     ambient[1] = (data[2]) | (data[3] << 8);    // als_data0
     ambient[2] = (data[4]) | (data[5] << 8);    // als_data1
